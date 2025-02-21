@@ -1,0 +1,300 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Регистрация - FPIChatik{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, var(--primary-color), #2196f3);
+    }
+
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        width: 100%;
+        max-width: 500px;
+        animation: slideUp 0.5s ease-out;
+    }
+
+    .auth-header {
+        text-align: center;
+        padding: 30px;
+        background: linear-gradient(45deg, var(--primary-color), #2196f3);
+        color: white;
+    }
+
+    .auth-logo {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .auth-subtitle {
+        opacity: 0.9;
+        font-size: 0.9em;
+    }
+
+    .auth-body {
+        padding: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .form-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+
+    .form-control {
+        padding: 12px 15px 12px 45px;
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(74, 118, 168, 0.25);
+    }
+
+    .form-text {
+        font-size: 0.85em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    .password-requirements {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        font-size: 0.9em;
+    }
+
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+        color: #6c757d;
+    }
+
+    .requirement-item i {
+        margin-right: 8px;
+        font-size: 14px;
+    }
+
+    .requirement-item.valid {
+        color: #198754;
+    }
+
+    .btn-register {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.1em;
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .auth-footer {
+        text-align: center;
+        padding: 20px 30px;
+        background: #f8f9fa;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .auth-footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .alert {
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .auth-card {
+            margin: 0;
+            border-radius: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">FPIChatik</div>
+            <div class="auth-subtitle">Создайте новый аккаунт</div>
+        </div>
+
+        <div class="auth-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="auth-body">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <i class="bi bi-person"></i>
+                            <input type="text" name="first_name" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" 
+                                   placeholder="Имя" value="{{ form.first_name.value|default:'' }}">
+                            {% if form.first_name.errors %}
+                                <div class="invalid-feedback">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <i class="bi bi-person"></i>
+                            <input type="text" name="last_name" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" 
+                                   placeholder="Фамилия" value="{{ form.last_name.value|default:'' }}">
+                            {% if form.last_name.errors %}
+                                <div class="invalid-feedback">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <i class="bi bi-person-badge"></i>
+                    <input type="text" name="username" class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                           placeholder="Имя пользователя" required value="{{ form.username.value|default:'' }}">
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <i class="bi bi-lock"></i>
+                    <input type="password" name="password1" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 
+                           placeholder="Пароль" required id="password1">
+                    {% if form.password1.errors %}
+                        <div class="invalid-feedback">{{ form.password1.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="password-requirements">
+                    <div class="requirement-item" id="length-req">
+                        <i class="bi bi-circle"></i> Минимум 8 символов
+                    </div>
+                    <div class="requirement-item" id="number-req">
+                        <i class="bi bi-circle"></i> Хотя бы одна цифра
+                    </div>
+                    <div class="requirement-item" id="letter-req">
+                        <i class="bi bi-circle"></i> Хотя бы одна буква
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <i class="bi bi-lock"></i>
+                    <input type="password" name="password2" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
+                           placeholder="Подтвердите пароль" required>
+                    {% if form.password2.errors %}
+                        <div class="invalid-feedback">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-register">
+                    <i class="bi bi-person-plus"></i> Зарегистрироваться
+                </button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            <p class="mb-0">
+                Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const password = document.getElementById('password1');
+    const lengthReq = document.getElementById('length-req');
+    const numberReq = document.getElementById('number-req');
+    const letterReq = document.getElementById('letter-req');
+
+    function checkPassword() {
+        const value = password.value;
+        
+        // Проверка длины
+        if (value.length >= 8) {
+            lengthReq.classList.add('valid');
+            lengthReq.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            lengthReq.classList.remove('valid');
+            lengthReq.querySelector('i').className = 'bi bi-circle';
+        }
+
+        // Проверка наличия цифры
+        if (/\d/.test(value)) {
+            numberReq.classList.add('valid');
+            numberReq.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            numberReq.classList.remove('valid');
+            numberReq.querySelector('i').className = 'bi bi-circle';
+        }
+
+        // Проверка наличия буквы
+        if (/[a-zA-Z]/.test(value)) {
+            letterReq.classList.add('valid');
+            letterReq.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            letterReq.classList.remove('valid');
+            letterReq.querySelector('i').className = 'bi bi-circle';
+        }
+    }
+
+    password.addEventListener('input', checkPassword);
+</script>
+{% endblock %} 

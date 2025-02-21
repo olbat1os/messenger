@@ -1,0 +1,263 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Друзья - FPIChatik{% endblock %}
+
+{% block extra_css %}
+<style>
+    .friends-container {
+        display: grid;
+        gap: 20px;
+    }
+
+    .friend-requests {
+        background: linear-gradient(45deg, #ff9800, #ff5722);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+    }
+
+    .friend-request-item {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .friend-request-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .friends-list {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .friend-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s;
+    }
+
+    .friend-item:last-child {
+        border-bottom: none;
+    }
+
+    .friend-item:hover {
+        background-color: var(--secondary-color);
+    }
+
+    .friend-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--secondary-color);
+    }
+
+    .friend-info {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .friend-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .friend-bio {
+        color: #6c757d;
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .friend-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .friend-actions .btn {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-view-profile {
+        background-color: var(--secondary-color);
+        color: var(--text-color);
+        border: none;
+    }
+
+    .btn-view-profile:hover {
+        background-color: #d0e3f7;
+        color: var(--primary-color);
+    }
+
+    .search-friends {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+    .search-friends:hover {
+        transform: scale(1.1);
+    }
+
+    @media (min-width: 768px) {
+        .search-friends {
+            bottom: 20px;
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: var(--primary-color);
+        opacity: 0.5;
+        margin-bottom: 20px;
+    }
+
+    /* Анимации */
+    @keyframes slideIn {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .friend-item {
+        animation: slideIn 0.3s ease-out forwards;
+    }
+
+    .friend-item:nth-child(n) {
+        animation-delay: calc(n * 0.1s);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="friends-container">
+        <!-- Заявки в друзья -->
+        {% if profile.friend_requests.exists %}
+        <div class="friend-requests">
+            <h3 class="h5 mb-3">
+                <i class="bi bi-person-plus"></i> Заявки в друзья
+            </h3>
+            {% for request_profile in profile.friend_requests.all %}
+            <div class="friend-request-item">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ request_profile.avatar_url }}" alt="Avatar" 
+                             class="friend-avatar me-3">
+                        <div>
+                            <div class="friend-name">
+                                {{ request_profile.user.get_full_name|default:request_profile.user.username }}
+                            </div>
+                            {% if request_profile.bio %}
+                            <div class="friend-bio">{{ request_profile.bio|truncatechars:100 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="friend-actions">
+                        <a href="{% url 'view_profile' request_profile.user.id %}" 
+                           class="btn btn-view-profile">
+                            <i class="bi bi-person-badge"></i> Профиль
+                        </a>
+                        <a href="{% url 'accept_friend' request_profile.user.id %}" 
+                           class="btn btn-light">
+                            <i class="bi bi-check-lg"></i> Принять
+                        </a>
+                        <a href="{% url 'reject_friend' request_profile.user.id %}" 
+                           class="btn btn-light">
+                            <i class="bi bi-x-lg"></i> Отклонить
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Список друзей -->
+        <div class="friends-list">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0">
+                    <i class="bi bi-people"></i> Мои друзья
+                </h3>
+                <span class="badge bg-primary">{{ friends|length }}</span>
+            </div>
+
+            {% if friends %}
+                {% for friend in friends %}
+                <div class="friend-item">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ friend.avatar_url }}" alt="Avatar" 
+                                 class="friend-avatar me-3">
+                            <div class="friend-info">
+                                <div class="friend-name">
+                                    {{ friend.user.get_full_name|default:friend.user.username }}
+                                </div>
+                                {% if friend.bio %}
+                                <div class="friend-bio">{{ friend.bio|truncatechars:100 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                            <a href="{% url 'view_profile' friend.user.id %}" 
+                               class="btn btn-view-profile">
+                                <i class="bi bi-person-badge"></i> Профиль
+                            </a>
+                            <a href="{% url 'create_private_chat' friend.user.id %}" 
+                               class="btn btn-primary">
+                                <i class="bi bi-chat"></i> Написать
+                            </a>
+                            <a href="{% url 'remove_friend' friend.user.id %}" 
+                               class="btn btn-outline-danger"
+                               onclick="return confirm('Удалить из друзей?')">
+                                <i class="bi bi-person-x"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-people"></i>
+                    <h3>У вас пока нет друзей</h3>
+                    <p class="text-muted">Найдите друзей и начните общение</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Кнопка поиска друзей -->
+    <a href="{% url 'search_users' %}" class="btn btn-primary search-friends">
+        <i class="bi bi-search"></i>
+    </a>
+</div>
+{% endblock %} 

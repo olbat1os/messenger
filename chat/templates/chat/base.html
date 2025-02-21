@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FPIChatik{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4a76a8;
+            --secondary-color: #e3f2fd;
+            --text-color: #2a5885;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            background-color: #f0f2f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), #2196f3);
+            padding: 15px 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-logo {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .header-logo:hover {
+            transform: scale(1.05);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .friend-requests-dropdown {
+            position: relative;
+        }
+
+        .friend-requests-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .friend-requests-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .friend-requests-btn i {
+            font-size: 1.2em;
+        }
+
+        .friend-requests-count {
+            background: #ff5722;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .friend-requests-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-top: 10px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .friend-requests-menu.show {
+            display: block;
+        }
+
+        .friend-request-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .friend-request-item:last-child {
+            border-bottom: none;
+        }
+
+        .request-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .request-info {
+            flex-grow: 1;
+        }
+
+        .request-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .request-btn {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .no-requests {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+        }
+
+        .user-info {
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-logo {
+                font-size: 1.5em;
+            }
+
+            .friend-requests-menu {
+                width: 280px;
+                right: -70px;
+            }
+
+            .user-info span {
+                display: none;
+            }
+        }
+
+        .main-container {
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            height: calc(100vh - 100px);
+            position: sticky;
+            top: 90px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                height: auto;
+                position: static;
+                margin-bottom: 20px;
+            }
+
+            .main-container {
+                margin-top: 60px;
+            }
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+        }
+
+        .profile-mini {
+            text-align: center;
+            padding: 25px 15px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary-color), #2196f3);
+            margin: -20px -20px 20px -20px;
+            border-radius: 10px 10px 0 0;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-mini::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .profile-mini .profile-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .profile-mini .profile-username {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .profile-mini-stats {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .mini-stat {
+            text-align: center;
+        }
+
+        .mini-stat-number {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .mini-stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .profile-mini-actions {
+            margin-top: 15px;
+        }
+
+        .profile-mini-actions .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .profile-mini-actions .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .profile-mini-actions .btn i {
+            margin-right: 5px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .messages-container {
+            background: white !important;
+            border-radius: 10px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        }
+
+        .message {
+            max-width: 80% !important;
+            margin-bottom: 20px !important;
+        }
+
+        .message-outgoing {
+            background: var(--primary-color) !important;
+            color: white !important;
+        }
+
+        .message-incoming {
+            background: var(--secondary-color) !important;
+            color: var(--text-color) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #3d638c;
+            border-color: #3d638c;
+        }
+
+        /* Мобильная навигация */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            padding: 10px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: flex;
+                justify-content: space-around;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                margin-bottom: 70px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h1 class="header-logo">FPIChatik</h1>
+                </div>
+                
+                <div class="col-auto header-controls">
+                    <div class="friend-requests-dropdown me-3">
+                        <button class="friend-requests-btn" onclick="toggleFriendRequests()">
+                            <i class="bi bi-people"></i>
+                            {% if request.user.profile.friend_requests.exists %}
+                                <span class="friend-requests-count">
+                                    {{ request.user.profile.friend_requests.count }}
+                                </span>
+                            {% endif %}
+                        </button>
+                        <div class="friend-requests-menu" id="friendRequestsMenu">
+                            {% if request.user.profile.friend_requests.exists %}
+                                {% for profile in request.user.profile.friend_requests.all %}
+                                    <div class="friend-request-item">
+                                        <img src="{{ profile.avatar_url }}" alt="Avatar" class="request-avatar">
+                                        <div class="request-info">
+                                            <div class="request-name">
+                                                {{ profile.user.get_full_name|default:profile.user.username }}
+                                            </div>
+                                        </div>
+                                        <div class="request-actions">
+                                            <form action="{% url 'accept_friend' profile.user.id %}" method="POST" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-primary request-btn">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                            </form>
+                                            <form action="{% url 'reject_friend' profile.user.id %}" method="POST" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger request-btn">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="no-requests">
+                                    Нет новых заявок в друзья
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="user-info">
+                        <span>{{ request.user.username }}</span>
+                    </div>
+                    <a href="{% url 'logout' %}" class="logout-btn">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span class="d-none d-md-inline">Выйти</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid main-container">
+        <div class="row">
+            {% if user.is_authenticated %}
+            <div class="col-md-3 col-lg-2">
+                <div class="sidebar">
+                    <div class="profile-mini">
+                        <img src="{{ user.profile.avatar_url }}" class="profile-avatar" alt="Profile avatar">
+                        <div class="profile-name">{{ user.get_full_name }}</div>
+                        <div class="profile-username">@{{ user.username }}</div>
+                    </div>
+                    
+                    <nav class="nav flex-column">
+                        <a href="{% url 'profile' %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                            <i class="bi bi-person"></i> Профиль
+                        </a>
+                        <a href="{% url 'messages' %}" class="nav-link {% if request.resolver_match.url_name == 'messages' %}active{% endif %}">
+                            <i class="bi bi-chat"></i> Сообщения
+                        </a>
+                        <a href="{% url 'friends' %}" class="nav-link {% if request.resolver_match.url_name == 'friends' %}active{% endif %}">
+                            <i class="bi bi-people"></i> Друзья
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="{% if user.is_authenticated %}col-md-9 col-lg-10{% else %}col-12{% endif %} content">
+                {% if messages %}
+                <div class="messages mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <nav class="mobile-nav">
+        <a href="{% url 'profile' %}" class="text-center {% if request.resolver_match.url_name == 'profile' %}text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-person h4 d-block"></i>
+            <small>Профиль</small>
+        </a>
+        <a href="{% url 'messages' %}" class="text-center {% if request.resolver_match.url_name == 'messages' %}text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-chat h4 d-block"></i>
+            <small>Чаты</small>
+        </a>
+        <a href="{% url 'friends' %}" class="text-center {% if request.resolver_match.url_name == 'friends' %}text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-people h4 d-block"></i>
+            <small>Друзья</small>
+        </a>
+    </nav>
+    {% endif %}
+
+    <!-- Добавим отладочную информацию -->
+    {% if debug %}
+    <div style="position: fixed; bottom: 10px; right: 10px; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+        <p>Заявки в друзья: {{ request.user.profile.friend_requests.count }}</p>
+        <p>Отправленные заявки: {{ request.user.profile.friend_requests_sent.count }}</p>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleFriendRequests() {
+            const menu = document.getElementById('friendRequestsMenu');
+            menu.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('friendRequestsMenu');
+            const button = event.target.closest('.friend-requests-dropdown button');
+            
+            if (!button && !menu.contains(event.target)) {
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

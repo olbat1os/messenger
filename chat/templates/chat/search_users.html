@@ -1,0 +1,201 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Поиск пользователей - FPIChatik{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-container {
+        display: grid;
+        gap: 20px;
+    }
+
+    .search-box {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 20px;
+    }
+
+    .search-input {
+        position: relative;
+    }
+
+    .search-input i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+
+    .search-input input {
+        padding-left: 45px;
+        border-radius: 25px;
+        border: 2px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .search-input input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(74, 118, 168, 0.25);
+    }
+
+    .search-results {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .user-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .user-item:last-child {
+        border-bottom: none;
+    }
+
+    .user-item:hover {
+        background-color: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--secondary-color);
+    }
+
+    .user-info {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .user-bio {
+        color: #6c757d;
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .friend-status {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+    }
+
+    .friend-status.pending {
+        background-color: #ffc107;
+        color: #000;
+    }
+
+    .friend-status.friends {
+        background-color: #198754;
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: var(--primary-color);
+        opacity: 0.5;
+        margin-bottom: 20px;
+    }
+
+    /* Анимации */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .user-item {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    .user-item:nth-child(n) {
+        animation-delay: calc(n * 0.1s);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="search-container">
+        <!-- Поисковая строка -->
+        <div class="search-box">
+            <form method="get" class="search-input">
+                <i class="bi bi-search"></i>
+                <input type="text" name="q" class="form-control form-control-lg" 
+                       placeholder="Поиск по имени или логину" 
+                       value="{{ query }}" autofocus>
+            </form>
+        </div>
+
+        <!-- Результаты поиска -->
+        {% if query %}
+            <div class="search-results">
+                {% if users %}
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h3 class="h5 mb-0">
+                            <i class="bi bi-people"></i> Результаты поиска
+                        </h3>
+                        <span class="badge bg-primary">{{ users|length }}</span>
+                    </div>
+                    {% for user in users %}
+                        <div class="user-card">
+                            <img src="{{ user.profile.avatar_url }}" alt="Avatar" class="user-avatar">
+                            <div class="user-info">
+                                <h5 class="user-name">{{ user.get_full_name|default:user.username }}</h5>
+                                <small class="user-username">@{{ user.username }}</small>
+                            </div>
+                            <div class="user-actions">
+                                <form action="{% url 'add_friend' user.id %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-person-plus-fill"></i> Добавить в друзья
+                                    </button>
+                                </form>
+                                <a href="{% url 'view_profile' user.id %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-person-lines-fill"></i> Профиль
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-search"></i>
+                        <h3>Ничего не найдено</h3>
+                        <p class="text-muted">Попробуйте изменить параметры поиска</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                <h3>Найдите новых друзей</h3>
+                <p class="text-muted">Введите имя или логин пользователя для поиска</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

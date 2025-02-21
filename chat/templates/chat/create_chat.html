@@ -1,0 +1,37 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Создать чат - FPIChatik{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Создать новый чат</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Название чата</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Участники (только друзья)</label>
+                            <div class="list-group">
+                                {% for friend in friends %}
+                                <label class="list-group-item">
+                                    <input class="form-check-input me-1" type="checkbox" 
+                                           name="participants" value="{{ friend.user.id }}">
+                                    {{ friend.user.get_full_name|default:friend.user.username }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Создать чат</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

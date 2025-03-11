@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <style>
+        .error { color: red; }
+        .success { color: green; }
+        #debug { margin: 10px; padding: 10px; background: #f0f0f0; }
+        #messages { 
+            height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid #ccc; 
+            margin: 10px 0; 
+            padding: 10px; 
+        }
+        .message {
+            padding: 8px;
+            margin: 4px 0;
+            border-radius: 8px;
+        }
+        .message-incoming {
+            background-color: #e3f2fd;
+            margin-right: 20%;
+        }
+        .message-outgoing {
+            background-color: #e8f5e9;
+            margin-left: 20%;
+            text-align: right;
+        }
+        .message-time {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .message-sender {
+            font-weight: bold;
+        }
+        .message-edited {
+            font-style: italic;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="debug"></div>
+    <div id="status"></div>
+    
+    <div id="loginForm">
+        <h3>Войти в систему</h3>
+        <form onsubmit="login(event)">
+            <div>
+                <input type="text" id="username" placeholder="Имя пользователя" required autocomplete="username">
+            </div>
+            <div>
+                <input type="password" id="password" placeholder="Пароль" required autocomplete="current-password">
+            </div>
+            <button type="submit">Войти</button>
+        </form>
+    </div>
+
+    <div id="chatInterface" style="display: none;">
+        <h3>Чат</h3>
+        <div id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Введите сообщение">
+            <button onclick="sendMessage()">Отправить</button>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = isError ? 'error' : 'success';
+        }
+
+        document.getElementById('debug').textContent = 'CSRF Token: ' + getCookie('csrftoken');
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+        }
+
+        function addMessage(data, isHistory = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            const isOutgoing = data.sender === currentUser;
+            
+            messageElement.className = `message ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
+            
+            let messageHtml = `
+                <div class="message-sender">${data.sender}</div>
+                <div class="message-content">${data.message}</div>
+                <div class="message-time">${formatDate(data.timestamp)}</div>
+            `;
+            
+            if (data.is_edited) {
+                messageHtml += '<div class="message-edited">(изменено)</div>';
+            }
+            
+            messageElement.innerHTML = messageHtml;
+            
+            if (isHistory) {
+                messagesDiv.appendChild(messageElement);
+            } else {
+                messagesDiv.insertBefore(messageElement, messagesDiv.firstChild);
+            }
+            
+            if (!isHistory) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        let currentUser = null;
+
+        function login(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            currentUser = username;  // Сохраняем имя текущего пользователя
+            const password = document.getElementById('password').value;
+            
+            console.log('Attempting login with:', { username });
+            showStatus('Выполняется вход...');
+            
+            fetch('/api/token-auth/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json().then(data => {
+                    if (response.ok) {
+                        console.log('Login successful:', data);
+                        showStatus('Вход выполнен успешно!');
+                        document.getElementById('loginForm').style.display = 'none';
+                        document.getElementById('chatInterface').style.display = 'block';
+                        connectWebSocket();
+                    } else {
+                        console.error('Login failed:', data);
+                        showStatus('Ошибка входа: ' + data.detail, true);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+                showStatus('Ошибка сети: ' + error.message, true);
+            });
+        }
+
+        function connectWebSocket() {
+            console.log('Connecting to WebSocket...');
+            showStatus('Подключение к чату...');
+            
+            const socket = new WebSocket(`ws://${window.location.host}/ws/chat/1/`);
+            const messageInput = document.getElementById('messageInput');
+
+            socket.onopen = function(e) {
+                console.log('WebSocket connection established');
+                showStatus('Подключено к чату');
+            };
+
+            socket.onmessage = function(e) {
+                console.log('Received message:', e.data);
+                const data = JSON.parse(e.data);
+                
+                if (data.type === 'chat_history') {
+                    // Очищаем существующие сообщения
+                    document.getElementById('messages').innerHTML = '';
+                    // Добавляем историю сообщений
+                    data.messages.forEach(msg => addMessage(msg, true));
+                } else {
+                    // Добавляем новое сообщение
+                    addMessage({
+                        ...data,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            };
+
+            socket.onerror = function(e) {
+                console.error('WebSocket error:', e);
+                showStatus('Ошибка подключения к чату', true);
+            };
+
+            socket.onclose = function(e) {
+                console.error('WebSocket closed:', {
+                    code: e.code,
+                    reason: e.reason,
+                    wasClean: e.wasClean
+                });
+                showStatus('Соединение с чатом прервано', true);
+            };
+
+            window.sendMessage = function() {
+                const message = messageInput.value;
+                if (message && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        'message': message
+                    }));
+                    messageInput.value = '';
+                }
+            }
+
+            // Добавляем обработчик Enter для отправки сообщения
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

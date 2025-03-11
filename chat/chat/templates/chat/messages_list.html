@@ -1,0 +1,189 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Сообщения - FPIChatik{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-list {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .chat-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        text-decoration: none;
+        color: var(--text-color);
+        transition: background-color 0.2s;
+    }
+
+    .chat-item:last-child {
+        border-bottom: none;
+    }
+
+    .chat-item:hover {
+        background-color: var(--secondary-color);
+        color: var(--text-color);
+    }
+
+    .chat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-right: 15px;
+    }
+
+    .chat-info {
+        flex-grow: 1;
+        min-width: 0; /* Для работы text-overflow */
+    }
+
+    .chat-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .chat-last-message {
+        color: #6c757d;
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .unread-badge {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 15px;
+        padding: 3px 10px;
+        font-size: 0.8em;
+        margin-left: 10px;
+    }
+
+    .world-chat {
+        background: linear-gradient(45deg, var(--primary-color), #2196f3);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        color: white;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        transition: transform 0.2s;
+    }
+
+    .world-chat:hover {
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .world-icon {
+        font-size: 2em;
+        margin-right: 15px;
+    }
+
+    .create-chat-btn {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+    .create-chat-btn:hover {
+        transform: scale(1.1);
+    }
+
+    @media (min-width: 768px) {
+        .create-chat-btn {
+            bottom: 20px;
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: var(--primary-color);
+        opacity: 0.5;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- World чат -->
+    <a href="{% url 'world_chat' %}" class="world-chat">
+        <div class="world-icon">
+            <span style="font-size: 32px;">🌍</span>
+        </div>
+        <div class="world-chat-info">
+            <h3 class="h5 mb-1">World Chat</h3>
+            <p class="mb-0">Общий чат для всех пользователей</p>
+        </div>
+    </a>
+
+    <!-- Остальные чаты -->
+    <div class="chat-list">
+        {% for chat_info in chats %}
+            {% if chat_info.chat.name != 'World' %}
+                <a href="{% url 'chat-detail' chat_info.chat.id %}" class="chat-item">
+                    <div class="chat-icon">
+                        {% if chat_info.chat.is_group_chat %}
+                            <i class="bi bi-people"></i>
+                        {% else %}
+                            <i class="bi bi-person"></i>
+                        {% endif %}
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-name">{{ chat_info.chat.name }}</div>
+                        {% if chat_info.last_message %}
+                            <div class="chat-last-message">
+                                {{ chat_info.last_message.sender.username }}: 
+                                {{ chat_info.last_message.content|truncatechars:50 }}
+                            </div>
+                        {% else %}
+                            <div class="chat-last-message">Нет сообщений</div>
+                        {% endif %}
+                    </div>
+                    {% if chat_info.unread_count > 0 %}
+                        <span class="unread-badge">{{ chat_info.unread_count }}</span>
+                    {% endif %}
+                </a>
+            {% endif %}
+        {% empty %}
+            <div class="empty-state">
+                <i class="bi bi-chat-dots"></i>
+                <h3>Нет активных чатов</h3>
+                <p class="text-muted">Начните общение, создав новый чат</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Кнопка создания чата -->
+    <a href="{% url 'create_chat' %}" class="btn btn-primary create-chat-btn">
+        <i class="bi bi-plus"></i>
+    </a>
+</div>
+{% endblock %} 
